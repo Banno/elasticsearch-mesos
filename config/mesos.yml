@@ -12,6 +12,6 @@ java.library.path: '/usr/local/lib'
 elasticsearch.noOfHwNodes: 1
 
 # Mesos resource requests
-resource.cpus: 1.0
+resource.cpus: 0.1 # was 1.0
 resource.mem: 256 # was 2048
-resource.disk: 1000
+resource.disk: 250 # was 1000
