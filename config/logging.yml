@@ -1,5 +1,5 @@
 # you can override this using by setting a system property, for example -Des.logger.level=DEBUG
-es.logger.level: INFO
+es.logger.level: DEBUG
 rootLogger: ${es.logger.level}, console, file
 logger:
   # log action execution errors for easier debugging
@@ -21,8 +21,8 @@ logger:
   index.indexing.slowlog: TRACE, index_indexing_slow_log_file
 
 additivity:
-  index.search.slowlog: false
-  index.indexing.slowlog: false
+  index.search.slowlog: true
+  index.indexing.slowlog: true
 
 appender:
   console:
