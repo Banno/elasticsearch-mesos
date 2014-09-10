@@ -1,4 +1,4 @@
-mesos.executor.uri: 'http://downloads.mesosphere.io/elasticsearch/elasticsearch-mesos-1.0.0-1.tgz'
+mesos.executor.uri: 'http://downloads.mesosphere.io/elasticsearch/elasticsearch-mesos-0.90.10-1.tgz'
 
 # Where the Mesos master is located
 mesos.master.url: 'zk://localhost:2181/mesos'
@@ -13,5 +13,5 @@ elasticsearch.noOfHwNodes: 1
 
 # Mesos resource requests
 resource.cpus: 1.0
-resource.mem: 2048
+resource.mem: 256 # was 2048
 resource.disk: 1000
