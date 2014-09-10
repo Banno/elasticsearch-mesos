@@ -1,12 +1,9 @@
 package mesosphere.elasticsearch
-
 import org.yaml.snakeyaml.Yaml
 import java.io.FileReader
-import java.util
-import scala.collection.JavaConverters._
-import org.apache.commons.cli.MissingArgumentException
+import java.util.LinkedHashMap
 import java.net.InetAddress
-import org.apache.log4j.{Level, BasicConfigurator}
+import scala.collection.JavaConverters._
 
 /**
  * ElasticSearch on Mesos
@@ -20,7 +17,7 @@ object Main extends App with Logger {
 
   val yaml = new Yaml()
   val mesosConf = yaml.load(new FileReader("config/mesos.yml"))
-    .asInstanceOf[util.LinkedHashMap[String, Any]].asScala
+    .asInstanceOf[LinkedHashMap[String, Any]].asScala
 
   // Get configs out of the mesos.yaml file
   val execUri = mesosConf.getOrElse("mesos.executor.uri",
