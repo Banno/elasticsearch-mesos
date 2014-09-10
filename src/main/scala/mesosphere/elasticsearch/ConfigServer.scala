@@ -22,7 +22,7 @@ class ConfigServer(port: Int, configDir: String, scheduler: ElasticSearchSchedul
 
     def handle(target: String, baseRequest: Request, request: HttpServletRequest, response: HttpServletResponse) = {
 
-      info(s"Serving config resource: ${target}")
+      log.info(s"Serving config resource: ${target}")
 
       val plainFilename = new File(new URI(target).getPath).getName // don't ask...
       val confFile = new File(s"${configDir}/${plainFilename}")
@@ -47,7 +47,5 @@ class ConfigServer(port: Int, configDir: String, scheduler: ElasticSearchSchedul
       baseRequest.setHandled(true)
       response.getWriter().println(substitutedContent)
     }
-
   }
-
 }

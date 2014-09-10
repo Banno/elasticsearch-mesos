@@ -32,35 +32,28 @@ class ElasticSearchScheduler(masterUrl: String,
   val isoDateFormat = new SimpleDateFormat("yyyyMMdd'T'HHmmss.SSS'Z'")
   isoDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"))
 
+  //TODO erich implement
+  def error(driver: SchedulerDriver, message: String): Unit =
+    log.error(message)
 
-  def error(driver: SchedulerDriver, message: String) {
-    error(message)
-    //TODO erich implement
-  }
-
-  def executorLost(driver: SchedulerDriver, executorId: ExecutorID, slaveId: SlaveID, status: Int) {
-    warn(s"Executor lost: '${executorId.getValue}' " +
+  //TODO erich implement
+  def executorLost(driver: SchedulerDriver, executorId: ExecutorID, slaveId: SlaveID, status: Int): Unit =
+    log.warn(s"Executor lost: '${executorId.getValue}' " +
       s"on slave '${slaveId.getValue}' " +
       s"with status '${status}'")
 
-    //TODO erich implement
-  }
+  def slaveLost(driver: SchedulerDriver, slaveId: SlaveID): Unit =
+    log.warn(s"Slave lost: '${slaveId.getValue}'")
 
-  def slaveLost(driver: SchedulerDriver, slaveId: SlaveID) {
-    warn(s"Slave lost: '${slaveId.getValue}'")
-  }
+  def disconnected(driver: SchedulerDriver): Unit =
+    log.warn("Disconnected")
 
-  def disconnected(driver: SchedulerDriver) {
-    warn("Disconnected")
-  }
-
-  def frameworkMessage(driver: SchedulerDriver, executorId: ExecutorID, slaveId: SlaveID, data: Array[Byte]) {
-    warn(s"FrameworkMessage from executor: '${executorId.getValue}' " +
+  def frameworkMessage(driver: SchedulerDriver, executorId: ExecutorID, slaveId: SlaveID, data: Array[Byte]): Unit =
+    log.warn(s"FrameworkMessage from executor: '${executorId.getValue}' " +
       s"on slave '${slaveId.getValue}'")
-  }
 
-  def statusUpdate(driver: SchedulerDriver, status: TaskStatus) {
-    info(s"received status update $status")
+  def statusUpdate(driver: SchedulerDriver, status: TaskStatus): Unit = {
+    log.info(s"received status update $status")
 
     status.getState match {
       case TaskState.TASK_FAILED | TaskState.TASK_FINISHED |
@@ -70,18 +63,15 @@ class ElasticSearchScheduler(masterUrl: String,
     }
   }
 
-  def offerRescinded(driver: SchedulerDriver, offerId: OfferID) {
-    warn(s"Offer ${offerId.getValue} rescinded")
-  }
+  def offerRescinded(driver: SchedulerDriver, offerId: OfferID): Unit =
+    log.warn(s"Offer ${offerId.getValue} rescinded")
 
   // Blocks with CountDown latch until we have enough seed nodes.
-  def waitUnitInit {
+  def waitUnitInit: Unit = {
     initialized.await()
   }
 
-  def resourceOffers(driver: SchedulerDriver, offers: util.List[Offer]) {
-
-    // Construct command to run
+  def resourceOffers(driver: SchedulerDriver, offers: util.List[Offer]): Unit = {
     val cmd = CommandInfo.newBuilder
       .addUris(CommandInfo.URI.newBuilder.setValue(execUri))
       .setValue(s"cd elasticsearch-mesos* && " +
@@ -92,7 +82,6 @@ class ElasticSearchScheduler(masterUrl: String,
       s"&& cd .. " +
       s"&& bin/elasticsearch -f")
 
-    // Create all my resources
     val res = resources.map {
       case (k, v) => ScalarResource(k, v).toProto
     }
@@ -101,9 +90,9 @@ class ElasticSearchScheduler(masterUrl: String,
     // We can't hand out the same port multiple times.
     for (offer <- offers.asScala) {
       if (isOfferGood(offer) && !haveEnoughNodes) {
-        debug(s"offer $offer")
+        log.debug(s"offer $offer")
 
-        info("Accepted offer: " + offer.getHostname)
+        log.info("Accepted offer: " + offer.getHostname)
 
         val id = s"elasticsearch_${offer.getHostname}_${isoDateFormat.format(new Date())}"
 
@@ -118,34 +107,27 @@ class ElasticSearchScheduler(masterUrl: String,
         driver.launchTasks(offer.getId, List(task).asJava)
         taskSet += Task(id, offer.getHostname)
       } else {
-        debug("Rejecting offer " + offer.getHostname)
+        log.debug("Rejecting offer " + offer.getHostname)
         driver.declineOffer(offer.getId)
       }
     }
 
     // If we have at least one node the assumption is that we are good to go.
-    if (haveEnoughNodes)
-      initialized.countDown()
+    if (haveEnoughNodes) initialized.countDown()
   }
 
-
-  def haveEnoughNodes = {
-    taskSet.size == numberOfHwNodes
-  }
+  def haveEnoughNodes: Boolean = taskSet.size == numberOfHwNodes
 
   // Check if offer is reasonable
-  def isOfferGood(offer: Offer) = {
-
-    // Make a list of offered resources
+  def isOfferGood(offer: Offer): Boolean = {
     val offeredRes = offer.getResourcesList.asScala.toList.map {
       k => (k.getName, k.getScalar.getValue)
     }
 
-    // Make a list of resources we need
     val requiredRes = resources.toList
 
-    debug("resources offered: " + offeredRes)
-    debug("resources required: " + requiredRes)
+    log.debug("resources offered: " + offeredRes)
+    log.debug("resources required: " + requiredRes)
 
     // creates map structure: resourceName, List(offer, required) and
     val resCompList = (offeredRes ++ requiredRes)
@@ -169,12 +151,11 @@ class ElasticSearchScheduler(masterUrl: String,
     taskSet.forall(_.hostname != offer.getHostname) && offersTooSmall == 0
   }
 
-  def reregistered(driver: SchedulerDriver, masterInfo: MasterInfo) {
-    //TODO erich implement
-  }
+  //TODO erich implement
+  def reregistered(driver: SchedulerDriver, masterInfo: MasterInfo): Unit = {}
 
-  def registered(driver: SchedulerDriver, frameworkId: FrameworkID, masterInfo: MasterInfo) {
-    info(s"Framework registered as ${frameworkId.getValue}")
+  def registered(driver: SchedulerDriver, frameworkId: FrameworkID, masterInfo: MasterInfo): Unit = {
+    log.info(s"Framework registered as ${frameworkId.getValue}")
 
     val request = Request.newBuilder()
       .addResources(ScalarResource("cpus", 1.0).toProto)
@@ -183,11 +164,10 @@ class ElasticSearchScheduler(masterUrl: String,
     val r = new util.ArrayList[Protos.Request]
     r.add(request)
     driver.requestResources(r)
-
   }
 
-  def run() {
-    info("Starting up...")
+  def run(): Unit = {
+    log.info("Starting up...")
     val driver = new MesosSchedulerDriver(this, FrameworkInfo("ElasticSearch")
       .toProto, masterUrl)
 
@@ -195,7 +175,7 @@ class ElasticSearchScheduler(masterUrl: String,
   }
 
   //TODO not used yet - we only do Scalar resources as of yet
-  def makeRangeResource(name: String, start: Long, end: Long) = {
+  def makeRangeResource(name: String, start: Long, end: Long): Unit = {
     Resource.newBuilder()
       .setName(name)
       .setType(Value.Type.RANGES)
@@ -205,5 +185,4 @@ class ElasticSearchScheduler(masterUrl: String,
   }
 
   case class Task(taskId: String, hostname: String)
-
 }

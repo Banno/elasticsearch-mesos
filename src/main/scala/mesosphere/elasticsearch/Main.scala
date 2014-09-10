@@ -40,11 +40,7 @@ object Main extends App with Logger {
     case (k, v) => k.replaceAllLiterally("resource.", "") -> v.toString.toFloat
   }
 
-  //TODO load the ElasticSearch log-properties file
-  BasicConfigurator.configure()
-  getRootLogger.setLevel(Level.INFO)
-
-  info("Starting ElasticSearch on Mesos.")
+  log.info("Starting ElasticSearch on Mesos.")
 
   // Instanciate framework and scheduler
   val scheduler = new ElasticSearchScheduler(masterUrl,
@@ -61,6 +57,5 @@ object Main extends App with Logger {
   // Start serving the ElasticMesos config
   val configServer = new ConfigServer(confServerPort, "config", scheduler)
 
-  info("ElasticSearch nodes starting on: " + scheduler.taskSet.mkString(","))
-
+  log.info("ElasticSearch nodes starting on: " + scheduler.taskSet.mkString(","))
 }
