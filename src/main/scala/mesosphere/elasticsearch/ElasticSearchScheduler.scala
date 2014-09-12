@@ -16,31 +16,29 @@ import java.util.{TimeZone, Date}
  *
  * @author erich<IDonLikeSpam>nachbar.biz
  */
-class ElasticSearchScheduler(masterUrl: String,
-                         execUri: String,
-                         confServerHostName: String,
-                         confServerPort: Int,
-                         resources: mutable.Map[String, Float],
-                         numberOfHwNodes: Int)
-  extends Scheduler with Runnable with Logger {
-
+class ElasticSearchScheduler(
+  masterUrl: String,
+  execUri: String,
+  confServerHostName: String,
+  confServerPort: Int,
+  resources: mutable.Map[String, Float],
+  numberOfHwNodes: Int
+) extends Scheduler with Runnable with Logger {
   val initialized = new CountDownLatch(1)
-
   val taskSet = mutable.Set[Task]()
 
   // Using a format without colons because task IDs become paths, and colons in paths break the JVM's CLASSPATH
-  val isoDateFormat = new SimpleDateFormat("yyyyMMdd'T'HHmmss.SSS'Z'")
-  isoDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"))
+  val isoDateFormat = {
+    val base = new SimpleDateFormat("yyyyMMdd'T'HHmmss.SSS'Z'")
+    base.setTimeZone(TimeZone.getTimeZone("UTC"))
+    base
+  }
 
-  //TODO erich implement
   def error(driver: SchedulerDriver, message: String): Unit =
     log.error(message)
 
-  //TODO erich implement
   def executorLost(driver: SchedulerDriver, executorId: ExecutorID, slaveId: SlaveID, status: Int): Unit =
-    log.warn(s"Executor lost: '${executorId.getValue}' " +
-      s"on slave '${slaveId.getValue}' " +
-      s"with status '${status}'")
+    log.warn(s"Executor lost: '${executorId.getValue}' on slave '${slaveId.getValue}' with status '${status}'")
 
   def slaveLost(driver: SchedulerDriver, slaveId: SlaveID): Unit =
     log.warn(s"Slave lost: '${slaveId.getValue}'")
@@ -49,12 +47,10 @@ class ElasticSearchScheduler(masterUrl: String,
     log.warn("Disconnected")
 
   def frameworkMessage(driver: SchedulerDriver, executorId: ExecutorID, slaveId: SlaveID, data: Array[Byte]): Unit =
-    log.warn(s"FrameworkMessage from executor: '${executorId.getValue}' " +
-      s"on slave '${slaveId.getValue}'")
+    log.warn(s"FrameworkMessage from executor: '${executorId.getValue}' on slave '${slaveId.getValue}'")
 
   def statusUpdate(driver: SchedulerDriver, status: TaskStatus): Unit = {
     log.info(s"received status update $status")
-
     status.getState match {
       case TaskState.TASK_FAILED | TaskState.TASK_FINISHED |
         TaskState.TASK_KILLED | TaskState.TASK_LOST =>
@@ -91,7 +87,6 @@ class ElasticSearchScheduler(masterUrl: String,
     for (offer <- offers.asScala) {
       if (isOfferGood(offer) && !haveEnoughNodes) {
         log.debug(s"offer $offer")
-
         log.info("Accepted offer: " + offer.getHostname)
 
         val id = s"elasticsearch_${offer.getHostname}_${isoDateFormat.format(new Date())}"
@@ -158,7 +153,7 @@ class ElasticSearchScheduler(masterUrl: String,
     log.info(s"Framework registered as ${frameworkId.getValue}")
 
     val request = Request.newBuilder()
-      .addResources(ScalarResource("cpus", 1.0).toProto)
+      .addResources(ScalarResource("cpus", 1.0).toProto) // todo: read from config...
       .build()
 
     val r = new util.ArrayList[Protos.Request]
@@ -168,9 +163,7 @@ class ElasticSearchScheduler(masterUrl: String,
 
   def run(): Unit = {
     log.info("Starting up...")
-    val driver = new MesosSchedulerDriver(this, FrameworkInfo("ElasticSearch")
-      .toProto, masterUrl)
-
+    val driver = new MesosSchedulerDriver(this, FrameworkInfo("ElasticSearch").toProto, masterUrl)
     driver.run().getValueDescriptor.getFullName
   }
 
