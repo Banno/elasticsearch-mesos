@@ -8,7 +8,7 @@ The driver will do all the heavy lifting like downloading Elasticsearch to the w
 
 ## Prerequisites
 
-- An Apache Mesos cluster running version 0.15.0+
+- An Apache Mesos cluster running version 0.20.0+
 - Java
 - Maven
 - wget
@@ -17,14 +17,14 @@ The driver will do all the heavy lifting like downloading Elasticsearch to the w
 
 1. Download the distribution from the Mesosphere [download server](http://downloads.mesosphere.io/elasticsearch/elasticsearch-mesos-0.90.10-1.tgz).
 
-1. Untar it onto the driver machine   
+1. Untar it onto the driver machine
    ```tar xzf es-mesos-*.tgz```
 
 1. Edit ```config/mesos.yaml``` and replace it with your Mesos settings.
 
 1. Edit ```config/elasticsearch.yaml``` and replace it with your Elasticsearch settings.
 
-1. Start the driver to initiate launching Elasticsearch on Mesos    
+1. Start the driver to initiate launching Elasticsearch on Mesos
 
         bin/elasticsearch-mesos
 
